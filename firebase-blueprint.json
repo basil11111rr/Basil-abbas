@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with basic information and app settings.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "onboardingComplete": { "type": "boolean" },
+        "theme": { "type": "string", "enum": ["dark", "light"] }
+      },
+      "required": ["uid", "email"]
+    },
+    "ResumeData": {
+      "title": "ResumeData",
+      "description": "The structured and raw data from a user's uploaded resume.",
+      "type": "object",
+      "properties": {
+        "raw": { "type": "string" },
+        "structured": { "type": "object" },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "filename": { "type": "string" }
+      },
+      "required": ["structured", "uploadedAt"]
+    },
+    "Job": {
+      "title": "Job",
+      "description": "Information about a specific job application.",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Saved", "Applied", "Interview", "Offer", "Rejected"] },
+        "notes": { "type": "string" },
+        "jobData": { "type": "object" },
+        "matchScore": { "type": "number" },
+        "matchDetails": { "type": "object" },
+        "generatedResume": { "type": "object" },
+        "generatedResumeFilename": { "type": "string" },
+        "coverLetter": { "type": "string" },
+        "applicationQA": { "type": "array" },
+        "interviewQuestions": { "type": "array" }
+      },
+      "required": ["jobId", "addedAt", "status", "jobData"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profiles."
+    },
+    "/users/{userId}/resumeData/main": {
+      "schema": "ResumeData",
+      "description": "Stores the user's current resume data."
+    },
+    "/users/{userId}/jobs/{jobId}": {
+      "schema": "Job",
+      "description": "Stores individual job applications for a user."
+    }
+  }
+}

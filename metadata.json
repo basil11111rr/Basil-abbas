@@ -1,0 +1,6 @@
+{
+  "name": "ApplySync",
+  "description": "Your AI-powered job application co-pilot. Parse resumes, analyze job listings, generate ATS-optimized resumes, write cover letters, and track your applications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

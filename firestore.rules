@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // USER RULES
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.uid == request.auth.uid 
+            && data.email is string 
+            && data.email.size() <= 256;
+      }
+
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().keys().hasAll(['uid', 'email']) && incoming().keys().size() >= 2;
+      allow update: if isOwner(userId) && isValidUser(incoming()) 
+          && (!incoming().diff(existing()).affectedKeys().hasAny(['uid', 'email', 'createdAt']));
+
+      // RESUME DATA
+      match /resumeData/main {
+        function isValidResume(data) {
+          return data.structured is map 
+              && (data.uploadedAt == request.time || data.uploadedAt is timestamp);
+        }
+        allow get: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidResume(incoming());
+      }
+
+      // JOBS
+      match /jobs/{jobId} {
+        function isValidJob(data) {
+          return isValidId(jobId)
+              && data.jobId == jobId
+              && data.status in ['Saved', 'Applied', 'Interview', 'Offer', 'Rejected']
+              && data.jobData is map
+              && (data.updatedAt == request.time || data.updatedAt is timestamp);
+        }
+
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow delete: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidJob(incoming()) 
+            && (incoming().addedAt == request.time || incoming().addedAt is timestamp);
+            
+        allow update: if isOwner(userId) && isValidJob(incoming())
+            && (!incoming().diff(existing()).affectedKeys().hasAny(['jobId', 'addedAt']));
+      }
+    }
+  }
+}
